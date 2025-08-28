@@ -194,29 +194,20 @@ jobs:
               "${{ steps.select.outputs.IMAGE }}"
 
   notify:
-    name: Notifications
+    name: Final Status
     runs-on: ubuntu-latest
     if: always()
     needs: [lint, tests, sonarcloud, docker_build_push, deploy]
     steps:
-      - name: Compose message
-        id: msg
+      - name: Show final status
         run: |
-          STATUS="SUCCESS"
-          for j in lint tests sonarcloud docker_build_push deploy; do
-            r="${{ needs[j].result }}"
-            [ "$r" = "failure" ] && STATUS="FAILURE"
-          done
-          echo "status=$STATUS" >> $GITHUB_OUTPUT
-
-      - name: Post to Slack (optional)
-        if: ${{ always() && secrets.SLACK_WEBHOOK_URL != '' }}
-        run: |
-          text="*${{ github.workflow }}* on *${{ github.ref_name }}* → *${{ steps.msg.outputs.status }}*\n\
-          Repo: ${{ github.repository }}\n\
-          Actor: ${{ github.actor }}\n\
-          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          payload=$(jq -nc --arg t "$text" '{text: $t}')
-          curl -X POST -H 'Content-type: application/json' \
-            --data "$payload" \
-            ${{ secrets.SLACK_WEBHOOK_URL }}
+          if [ "${{ needs.lint.result }}" = "failure" ] || \
+             [ "${{ needs.tests.result }}" = "failure" ] || \
+             [ "${{ needs.sonarcloud.result }}" = "failure" ] || \
+             [ "${{ needs.docker_build_push.result }}" = "failure" ] || \
+             [ "${{ needs.deploy.result }}" = "failure" ]; then
+             echo "❌ Workflow failed"
+             exit 1
+          else
+             echo "✅ Workflow succeeded"
+          fi
