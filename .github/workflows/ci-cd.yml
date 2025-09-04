@@ -193,11 +193,11 @@ jobs:
       - name: Show final status
         run: |
           FAILED=false
-          for job in lint tests sonarcloud docker_build_push deploy; do
-            if [ "${{ needs[$job].result }}" = "failure" ]; then
-              FAILED=true
-            fi
-          done
+          if [ "${{ needs.lint.result }}" = "failure" ]; then FAILED=true; fi
+          if [ "${{ needs.tests.result }}" = "failure" ]; then FAILED=true; fi
+          if [ "${{ needs.sonarcloud.result }}" = "failure" ]; then FAILED=true; fi
+          if [ "${{ needs.docker_build_push.result }}" = "failure" ]; then FAILED=true; fi
+          if [ "${{ needs.deploy.result }}" = "failure" ]; then FAILED=true; fi
 
           if [ "$FAILED" = "true" ]; then
             echo "❌ Workflow failed"
