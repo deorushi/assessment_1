@@ -157,11 +157,9 @@ jobs:
     steps:
       - name: Select image tag
         id: select
-        run: |
-          if [ -n "${{ inputs.image_tag }}" ]; then
-            echo "IMAGE=${{ env.IMAGE_NAME }}:${{ inputs.image_tag }}" >> $GITHUB_OUTPUT
-          else
-            echo "IMAGE=${{ env.IMAGE_NAME }}:${{ needs.docker_build_push.outputs.tag }}" >> $GITHUB_OUTPUT
+        # One-line safe fallback to avoid shell syntax errors
+        run: echo "IMAGE=${{ env.IMAGE_NAME }}:${{ inputs.image_tag || needs.docker_build_push.outputs.tag }}" >> $GITHUB_OUTPUT
+
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1
         with:
@@ -202,3 +200,4 @@ jobs:
              exit 1
           else
              echo "✅ Workflow succeeded"
+    
