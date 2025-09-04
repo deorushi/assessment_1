@@ -186,20 +186,24 @@ jobs:
               "${{ steps.select.outputs.IMAGE }}"
 
   notify:
-    name: Final Status
+    name: Show final status
     runs-on: ubuntu-latest
-    if: always()
     needs: [lint, tests, sonarcloud, docker_build_push, deploy]
     steps:
       - name: Show final status
         run: |
-          if [ "${{ needs.lint.result }}" = "failure" ] || \
-             [ "${{ needs.tests.result }}" = "failure" ] || \
-             [ "${{ needs.sonarcloud.result }}" = "failure" ] || \
-             [ "${{ needs.docker_build_push.result }}" = "failure" ] || \
-             [ "${{ needs.deploy.result }}" = "failure" ]; then
-             echo "❌ Workflow failed"
-             exit 1
+          FAILED=false
+          for job in lint tests sonarcloud docker_build_push deploy; do
+            if [ "${{ needs[$job].result }}" = "failure" ]; then
+              FAILED=true
+            fi
+          done
+
+          if [ "$FAILED" = "true" ]; then
+            echo "❌ Workflow failed"
+            exit 1
           else
-             echo "✅ Workflow succeeded"
+            echo "✅ Workflow succeeded"
+          fi
+
     
