@@ -158,7 +158,9 @@ jobs:
       - name: Select image tag
         id: select
         # One-line safe fallback to avoid shell syntax errors
-        run: echo "IMAGE=${{ env.IMAGE_NAME }}:${{ inputs.image_tag || needs.docker_build_push.outputs.tag }}" >> $GITHUB_OUTPUT
+        run: |
+          IMAGE_TAG="${{ inputs.image_tag || needs.docker_build_push.outputs.tag || 'latest' }}"
+          echo "IMAGE=${{ env.IMAGE_NAME }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1
