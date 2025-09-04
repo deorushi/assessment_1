@@ -174,8 +174,7 @@ jobs:
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script_stop: true
+          key: ${{ secrets.SSH_USERNAME }}
           script: |
             set -Eeuo pipefail
             echo "Logging in to Docker..."
