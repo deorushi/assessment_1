@@ -96,13 +96,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Download coverage report
         uses: actions/download-artifact@v4
         with:
           name: coverage-ubuntu-latest-py3.11
           path: .
-
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
         env:
@@ -114,16 +112,16 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, tests, sonarcloud]
     if: github.event_name != 'pull_request'
+    outputs:
+      tag: ${{ steps.image.outputs.tag }}   # job-level output
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Login to Docker registry
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-
       - name: Docker metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -133,10 +131,8 @@ jobs:
             type=raw,value=${{ inputs.image_tag }}
             type=sha,format=long
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v3
-
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
@@ -147,7 +143,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
       - name: Expose image tag output
         id: image
         run: |
@@ -166,9 +161,7 @@ jobs:
           if [ -n "${{ inputs.image_tag }}" ]; then
             echo "IMAGE=${{ env.IMAGE_NAME }}:${{ inputs.image_tag }}" >> $GITHUB_OUTPUT
           else
-            echo "IMAGE=${{ env.IMAGE_NAME }}:${{ github.sha }}" >> $GITHUB_OUTPUT
-          fi
-
+            echo "IMAGE=${{ env.IMAGE_NAME }}:${{ needs.docker_build_push.outputs.tag }}" >> $GITHUB_OUTPUT
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1
         with:
@@ -209,4 +202,3 @@ jobs:
              exit 1
           else
              echo "✅ Workflow succeeded"
-          fi
